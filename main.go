@@ -34,6 +34,7 @@ var client *whatsmeow.Client
 var ai bool = false
 
 func eventHandler(evt interface{}) {
+	ctx := context.Background()
 	switch v := evt.(type) {
 	case *events.Message:
 		if !v.Info.IsFromMe {
@@ -46,14 +47,13 @@ func eventHandler(evt interface{}) {
 				fmt.Println("PESAN DITERIMA!", v.Message.GetConversation())
 
 				if strings.ToLower(v.Message.GetConversation()) == "/ai" {
-					client.SendMessage(v.Info.Sender, "", &waProto.Message{
+					client.SendMessage(ctx, v.Info.Sender, &waProto.Message{
 						Conversation: proto.String("AI: Okay I'm listening, how can I help you now?"),
 					})
 
 					ai = true
 					return
 				}
-
 				if ai {
 					request := types.NewDefaultCompletionRequest("The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: Hello, who are you?\nAI: I am an AI created by OpenAI. How can I help you today?\nHuman: " + v.Message.GetConversation() + "\nAI:")
 					request.Model = "text-davinci-003"
@@ -66,18 +66,18 @@ func eventHandler(evt interface{}) {
 
 					resp, err := openAI.CreateCompletion(request)
 					if err != nil {
-						client.SendMessage(v.Info.Sender, "", &waProto.Message{
+						client.SendMessage(ctx, v.Info.Sender, &waProto.Message{
 							Conversation: proto.String("AI [Automatic Messages] Error: " + err.Error()),
 						})
 					}
 
 					if len(resp.Choices) == 0 {
-						client.SendMessage(v.Info.Sender, "", &waProto.Message{
+						client.SendMessage(ctx, v.Info.Sender, &waProto.Message{
 							Conversation: proto.String("AI [Automatic Messages] Error: " + err.Error()),
 						})
 					}
 
-					client.SendMessage(v.Info.Sender, "", &waProto.Message{
+					client.SendMessage(ctx, v.Info.Sender, &waProto.Message{
 						Conversation: proto.String("AI [Automatic Messages]: " + resp.Choices[0].Text),
 					})
 
